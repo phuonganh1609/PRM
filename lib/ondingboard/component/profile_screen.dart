@@ -36,7 +36,10 @@ class LoggedInScreen extends StatelessWidget {
                 ),
               ),
             ),
+
             const SizedBox(height: 32),
+
+            // Thông tin user
             _buildInfoRow('Email', user['email'] ?? '—'),
             const SizedBox(height: 16),
             _buildInfoRow('Phone', user['phone'] ?? '—'),
@@ -44,12 +47,17 @@ class LoggedInScreen extends StatelessWidget {
             _buildInfoRow('Address', user['address'] ?? '—'),
             const SizedBox(height: 16),
             _buildInfoRow('Role', user['role'] ?? 'User'),
+
             const SizedBox(height: 32),
+
+            // Nút hành động
             _buildActionButton(context, 'Delete Account', Colors.red),
             _buildActionButton(context, 'Sign Out', Colors.blue),
             _buildActionButton(context, 'Review App', Colors.grey),
 
             const Spacer(),
+
+            // Footer
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -93,59 +101,7 @@ class LoggedInScreen extends StatelessWidget {
               MaterialPageRoute(builder: (_) => const SelectBuildPage()),
             );
           } else if (text == 'Delete Account') {
-            final String baseUrl =
-                'http://10.0.2.2:5162/api/user/${user['userId']}';
-
-            showDialog(
-              context: context,
-              builder: (_) => AlertDialog(
-                title: const Text('Confirm Delete'),
-                content: const Text(
-                  'Are you sure you want to delete your account?',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
-                  ),
-                  TextButton(
-                    onPressed: () async {
-                      Navigator.pop(context); // đóng dialog
-
-                      try {
-                        final response = await http.delete(Uri.parse(baseUrl));
-
-                        if (response.statusCode == 200 ||
-                            response.statusCode == 204) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Account deleted successfully'),
-                            ),
-                          );
-                          Navigator.pop(context); // quay lại login
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Failed to delete account: ${response.statusCode}',
-                              ),
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-                      }
-                    },
-                    child: const Text(
-                      'Delete',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  ),
-                ],
-              ),
-            );
+            await _deleteAccount(context);
           }
         },
         style: ElevatedButton.styleFrom(
@@ -156,5 +112,59 @@ class LoggedInScreen extends StatelessWidget {
         child: Text(text),
       ),
     );
+  }
+
+  Future<void> _deleteAccount(BuildContext context) async {
+    final int? id = user['userId'] ?? user['id'];
+    if (id == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('User ID not found')));
+      return;
+    }
+
+    final String url = 'http://10.0.2.2:5162/api/user/$id';
+
+    // Hiển thị dialog xác nhận
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Confirm Delete'),
+        content: const Text('Are you sure you want to delete your account?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return; // Nếu bấm Cancel thì thôi
+
+    try {
+      final response = await http.delete(Uri.parse(url));
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Account deleted successfully')),
+        );
+        Navigator.pop(context); // Quay lại màn hình login
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete account: ${response.statusCode}'),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error deleting account: $e')));
+    }
   }
 }
