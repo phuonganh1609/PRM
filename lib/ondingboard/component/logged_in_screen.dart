@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:buid_app/ondingboard/theme/theme.dart' as theme;
 import 'package:buid_app/ondingboard/component/buildPC.dart';
 
@@ -26,7 +27,6 @@ class LoggedInScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Username (fullname/email)
             Center(
               child: Text(
                 user['fullname'] ?? user['email'] ?? 'Unknown User',
@@ -36,10 +36,7 @@ class LoggedInScreen extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 32),
-
-            // Thông tin user
             _buildInfoRow('Email', user['email'] ?? '—'),
             const SizedBox(height: 16),
             _buildInfoRow('Phone', user['phone'] ?? '—'),
@@ -47,17 +44,12 @@ class LoggedInScreen extends StatelessWidget {
             _buildInfoRow('Address', user['address'] ?? '—'),
             const SizedBox(height: 16),
             _buildInfoRow('Role', user['role'] ?? 'User'),
-
             const SizedBox(height: 32),
-
-            // Nút hành động
             _buildActionButton(context, 'Delete Account', Colors.red),
             _buildActionButton(context, 'Sign Out', Colors.blue),
             _buildActionButton(context, 'Review App', Colors.grey),
 
             const Spacer(),
-
-            // Footer
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -92,18 +84,68 @@ class LoggedInScreen extends StatelessWidget {
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
       child: ElevatedButton(
-        onPressed: () {
+        onPressed: () async {
           if (text == 'Sign Out') {
-            // ⚡ Đăng xuất -> quay lại màn hình login
             Navigator.pop(context);
           } else if (text == 'Review App') {
-            // ⚡ Quay về màn hình chính buildCore.dart
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (_) => const SelectBuildPage()),
             );
           } else if (text == 'Delete Account') {
-            // ⚡ TODO: Gọi API xoá tài khoản nếu muốn
+            final String baseUrl =
+                'http://10.0.2.2:5162/api/user/${user['userId']}';
+
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text('Confirm Delete'),
+                content: const Text(
+                  'Are you sure you want to delete your account?',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      Navigator.pop(context); // đóng dialog
+
+                      try {
+                        final response = await http.delete(Uri.parse(baseUrl));
+
+                        if (response.statusCode == 200 ||
+                            response.statusCode == 204) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Account deleted successfully'),
+                            ),
+                          );
+                          Navigator.pop(context); // quay lại login
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Failed to delete account: ${response.statusCode}',
+                              ),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      }
+                    },
+                    child: const Text(
+                      'Delete',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ],
+              ),
+            );
           }
         },
         style: ElevatedButton.styleFrom(
