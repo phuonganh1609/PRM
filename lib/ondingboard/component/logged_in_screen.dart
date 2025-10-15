@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:buid_app/ondingboard/theme/theme.dart' as theme;
+import 'package:buid_app/ondingboard/component/buildPC.dart';
 
 class LoggedInScreen extends StatelessWidget {
-  const LoggedInScreen({super.key});
+  final Map<String, dynamic> user;
+
+  const LoggedInScreen({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Profile',
+          user['fullname'] ?? 'Profile',
           style: TextStyle(
             color: theme.AppColors.textSecondary,
             fontWeight: FontWeight.bold,
@@ -23,41 +26,45 @@ class LoggedInScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // User ID
+            // Username (fullname/email)
             Center(
               child: Text(
-                'wz8xhzf5xq6178',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                user['fullname'] ?? user['email'] ?? 'Unknown User',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
 
-            SizedBox(height: 32),
+            const SizedBox(height: 32),
 
-            // Region info
-            _buildInfoRow('Region', 'United States'),
+            // Thông tin user
+            _buildInfoRow('Email', user['email'] ?? '—'),
+            const SizedBox(height: 16),
+            _buildInfoRow('Phone', user['phone'] ?? '—'),
+            const SizedBox(height: 16),
+            _buildInfoRow('Address', user['address'] ?? '—'),
+            const SizedBox(height: 16),
+            _buildInfoRow('Role', user['role'] ?? 'User'),
 
-            SizedBox(height: 16),
+            const SizedBox(height: 32),
 
-            // Username info
-            _buildInfoRow('Username', 'wz8xhzf5xq6178'),
+            // Nút hành động
+            _buildActionButton(context, 'Delete Account', Colors.red),
+            _buildActionButton(context, 'Sign Out', Colors.blue),
+            _buildActionButton(context, 'Review App', Colors.grey),
 
-            SizedBox(height: 32),
-
-            // Action buttons
-            _buildActionButton('Delete Account', Colors.red),
-            _buildActionButton('Sign Out', Colors.blue),
-            _buildActionButton('Review App', Colors.grey),
-
-            Spacer(),
+            const Spacer(),
 
             // Footer
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                TextButton(onPressed: () {}, child: Text('Contact Us')),
+                TextButton(onPressed: () {}, child: const Text('Contact Us')),
                 TextButton(
                   onPressed: () {},
-                  child: Text('Affiliate Disclosure'),
+                  child: const Text('Affiliate Disclosure'),
                 ),
               ],
             ),
@@ -73,28 +80,36 @@ class LoggedInScreen extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         Text(value, style: TextStyle(fontSize: 16, color: Colors.grey[600])),
       ],
     );
   }
 
-  Widget _buildActionButton(String text, Color color) {
+  Widget _buildActionButton(BuildContext context, String text, Color color) {
     return Container(
       width: double.infinity,
-      margin: EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 12),
       child: ElevatedButton(
         onPressed: () {
           if (text == 'Sign Out') {
-            // Xử lý đăng xuất
-            // Trong thực tế, bạn sẽ clear token và quay về màn hình chưa login
+            // ⚡ Đăng xuất -> quay lại màn hình login
+            Navigator.pop(context);
+          } else if (text == 'Review App') {
+            // ⚡ Quay về màn hình chính buildCore.dart
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const SelectBuildPage()),
+            );
+          } else if (text == 'Delete Account') {
+            // ⚡ TODO: Gọi API xoá tài khoản nếu muốn
           }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           foregroundColor: Colors.white,
-          padding: EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 16),
         ),
         child: Text(text),
       ),

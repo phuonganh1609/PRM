@@ -22,7 +22,7 @@ class _HomeScreenState extends State<HomePage> {
     // Danh sách các trang tương ứng với từng tab
     final List<Widget> pages = [
       const SelectBuildPage(), // Build PC
-      CategoriesScreen(), // Categories
+      Categories(), // Categories
       const SaleListScreen(), // Sales
       _isLoggedIn
           ? const LoggedInScreen()

@@ -1,86 +1,103 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'logged_in_screen.dart';
-import 'package:buid_app/ondingboard/theme/theme.dart' as theme;
 
-class SignInMethodScreen extends StatelessWidget {
+class SignInMethodScreen extends StatefulWidget {
   const SignInMethodScreen({super.key});
+
+  @override
+  State<SignInMethodScreen> createState() => _SignInMethodScreenState();
+}
+
+class _SignInMethodScreenState extends State<SignInMethodScreen> {
+  final _fullnameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _addressCtrl = TextEditingController();
+  final _dobCtrl = TextEditingController();
+
+  final String baseUrl =
+      'http://10.0.2.2:5162/api/user'; //  đổi sang port backend thật
+
+  bool _isLoading = false;
+
+  Future<void> _handleRegister() async {
+    setState(() => _isLoading = true);
+
+    final uri = Uri.parse('$baseUrl/register');
+    final body = jsonEncode({
+      "fullname": _fullnameCtrl.text,
+      "email": _emailCtrl.text,
+      "password": _passwordCtrl.text,
+      "phone": _phoneCtrl.text,
+      "dob": _dobCtrl.text,
+      "address": _addressCtrl.text,
+    });
+
+    try {
+      final response = await http.post(
+        uri,
+        headers: {"Content-Type": "application/json"},
+        body: body,
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final token = data['token'];
+        print(' Token: $token');
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Đăng ký thành công!')));
+
+        // Chuyển sang màn hình Profile
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoggedInScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi: ${data["message"] ?? "Không xác định"}'),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(' Lỗi kết nối: $e')));
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Sign in to BuildCores',
-          style: TextStyle(
-            color: theme.AppColors.textSecondary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: theme.AppColors.primaryGradient.colors.first,
+        title: const Text('Sign in to BuildCores'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SizedBox(height: 40),
-
-            // Google Sign In Button
-            _buildSocialButton(
-              text: 'Continue with Google',
-              icon: Icons.g_mobiledata, // icon đặc trưng Google
-              color: theme.AppColors.google,
-              textColor: theme.AppColors.textSecondary,
-              borderColor: Colors.grey.shade300,
-              logoColor: theme.AppColors.icon,
-              onPressed: () {
-                _handleLogin(context);
-              },
-            ),
-
-            SizedBox(height: 16),
-
-            // Apple Sign In Button
-            _buildSocialButton(
-              text: 'Tiếp tục với Apple',
-              icon: Icons.apple,
-              color: theme.AppColors.apple,
-              textColor: theme.AppColors.textSecondary,
-              logoColor: theme.AppColors.icon,
-              onPressed: () {
-                _handleLogin(context);
-              },
-            ),
-
-            SizedBox(height: 24),
-
-            Divider(),
-
-            SizedBox(height: 24),
-
-            // Email Sign In Button
+            _buildTextField("Full Name", _fullnameCtrl),
+            _buildTextField("Email", _emailCtrl),
+            _buildTextField("Password", _passwordCtrl, obscureText: true),
+            _buildTextField("Phone", _phoneCtrl),
+            _buildTextField("Address", _addressCtrl),
+            _buildTextField("Dob (yyyy-MM-dd)", _dobCtrl),
+            const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                _handleLogin(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                foregroundColor: Colors.blue,
-                elevation: 0,
-                side: BorderSide(color: Colors.blue),
-                padding: EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: Text(
-                'Continue with email',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
+              onPressed: _isLoading ? null : _handleRegister,
+              child: _isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Sign In'),
             ),
           ],
         ),
@@ -88,51 +105,21 @@ class SignInMethodScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSocialButton({
-    required String text,
-    required IconData icon,
-    required Color color,
-    required Color textColor,
-    required VoidCallback onPressed,
-    Color? borderColor,
-    Color? logoColor,
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller, {
+    bool obscureText = false,
   }) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: textColor,
-        padding: EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: borderColor != null
-              ? BorderSide(color: borderColor)
-              : BorderSide.none,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: logoColor ?? textColor, size: 22),
-          SizedBox(width: 12),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: textColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _handleLogin(BuildContext context) {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => LoggedInScreen()),
-      (route) => false,
     );
   }
 }
