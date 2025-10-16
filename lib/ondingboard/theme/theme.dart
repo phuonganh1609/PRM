@@ -18,12 +18,6 @@ class AppColors {
   static const Color textPrimary = Color(0xFF000000); // đen
   static const Color textSecondary = Color(0xFFFFFFFF); // trắng
   static const Color textThird = Color.fromARGB(255, 223, 203, 203); // xám đậm
-  static const Color google = Color.fromARGB(
-    255,
-    255,
-    1,
-    1,
-  ); // đỏ đặc trưng Google
-  static const Color apple = Color(0xFF000000); // đen đặc trưng Apple
+  static const Color price = Color.fromARGB(255, 248, 0, 0); // đỏ
   static const Color icon = Color(0xFFFFFFFF);
 }

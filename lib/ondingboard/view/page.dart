@@ -32,7 +32,7 @@ class _HomeScreenState extends State<HomePage> {
     final List<Widget> pages = [
       const SelectBuildPage(),
       Categories(),
-      const SaleListScreen(),
+      const SaleListScreen(), //
       _isLoggedIn
           ? LoggedInScreen(user: userData) //  truyền đúng param
           : _buildProfilePlaceholder(),

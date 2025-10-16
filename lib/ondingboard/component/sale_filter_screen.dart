@@ -1,245 +1,169 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:buid_app/ondingboard/theme/theme.dart' as theme;
+import 'package:http/http.dart' as http;
 
-class SaleFilterScreen extends StatelessWidget {
+class SaleFilterScreen extends StatefulWidget {
   const SaleFilterScreen({super.key});
+
+  @override
+  State<SaleFilterScreen> createState() => _SaleFilterScreenState();
+}
+
+class _SaleFilterScreenState extends State<SaleFilterScreen> {
+  List<dynamic> categories = [];
+  bool isLoading = true;
+  String? errorMessage;
+  int? selectedCategoryId;
+
+  final String apiUrl = "http://10.0.2.2:5162/api/category";
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCategories();
+  }
+
+  Future<void> fetchCategories() async {
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          categories = data;
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          errorMessage = "Lỗi khi tải danh mục (HTTP ${response.statusCode})";
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = "Không thể kết nối đến server: $e";
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Sales Filter'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Select All section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Select All',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Switch(value: false, onChanged: (value) {}),
-              ],
-            ),
-            
-            SizedBox(height: 24),
-            
-            // Push Notifications section
-            Text(
-              'Push Notifications',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            
-            SizedBox(height: 16),
-            
-            // Notification options
-            _buildNotificationOption('Get notified about sales', false),
-            _buildNotificationOption('Case', true),
-            _buildNotificationOption('CPU', false),
-            _buildNotificationOption('Motherboard', false),
-            _buildNotificationOption('GPU', true),
-            _buildNotificationOption('RAM', false),
-            _buildNotificationOption('CPU Cooler', false),
-            _buildNotificationOption('Storage', false),
-            _buildNotificationOption('Power Supply', false),
-            
-            SizedBox(height: 24),
-            
-            Divider(),
-            
-            SizedBox(height: 24),
-            
-            // View Results button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: Text('View Results (All)'),
-              ),
-            ),
-          ],
+        backgroundColor: theme.AppColors.primaryGradient.colors.first,
+        title: const Text(
+          'Sale Filter',
+          style: TextStyle(
+            color: theme.AppColors.textSecondary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
+        elevation: 1,
       ),
-    );
-  }
-  
-  Widget _buildNotificationOption(String title, bool isChecked) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title),
-          Switch(value: isChecked, onChanged: (value) {}),
-        ],
-      ),
-    );
-  }
-}
-
-// Bottom sheet version for modal display
-class SaleFilterBottomSheet extends StatelessWidget {
-  final ScrollController scrollController;
-  
-  const SaleFilterBottomSheet({super.key, required this.scrollController});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          // Handle bar
-          Container(
-            margin: EdgeInsets.symmetric(vertical: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          // Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Sales Filter',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: theme.AppColors.primaryGradient,
+        ),
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : errorMessage != null
+            ? Center(
+                child: Text(
+                  errorMessage!,
+                  style: const TextStyle(color: Colors.redAccent, fontSize: 16),
                 ),
-                IconButton(
-                  icon: Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-          ),
-          Divider(),
-          // Content
-          Expanded(
-            child: ListView(
-              controller: scrollController,
-              padding: const EdgeInsets.all(16.0),
-              children: [
-                // Select All section
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              )
+            : Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
                   children: [
-                    Text(
-                      'Select All',
+                    const Text(
+                      "Select a Category:",
                       style: TextStyle(
+                        color: theme.AppColors.textSecondary,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Switch(value: false, onChanged: (value) {}),
+                    const SizedBox(height: 20),
+
+                    // Danh sách các danh mục
+                    Expanded(
+                      child: ListView.separated(
+                        itemCount: categories.length,
+                        separatorBuilder: (_, __) => const Divider(),
+                        itemBuilder: (context, index) {
+                          final category = categories[index];
+                          final id = category["id"];
+                          final name = category["name"] ?? "Unnamed";
+
+                          return ListTile(
+                            title: Text(
+                              name,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: theme.AppColors.textSecondary,
+                              ),
+                            ),
+                            trailing: Radio<int>(
+                              value: id,
+                              groupValue: selectedCategoryId,
+                              //chinh mau radio
+                              activeColor: theme.AppColors.background,
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedCategoryId = value;
+                                });
+                              },
+                            ),
+                            onTap: () {
+                              setState(() {
+                                selectedCategoryId = id;
+                              });
+                            },
+                          );
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: selectedCategoryId == null
+                          ? null
+                          : () {
+                              // Trả categoryId về màn trước
+                              Navigator.pop(context, selectedCategoryId);
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: selectedCategoryId == null
+                            ? Colors.grey[300] // Màu khi chưa chọn
+                            : theme.AppColors.background, // Màu khi đã chọn
+                        foregroundColor: selectedCategoryId == null
+                            ? Colors.grey[600] // Màu chữ khi chưa chọn
+                            : theme
+                                  .AppColors
+                                  .textPrimary, // Màu chữ khi đã chọn
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 20,
+                        ),
+                        minimumSize: const Size(double.infinity, 48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: selectedCategoryId == null ? 0 : 2,
+                      ),
+                      child: Text(
+                        selectedCategoryId == null
+                            ? "Select a category"
+                            : "Have $selectedCategoryId",
+                      ),
+                    ),
                   ],
                 ),
-                
-                SizedBox(height: 24),
-                
-                // Push Notifications section
-                Text(
-                  'Push Notifications',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                
-                SizedBox(height: 16),
-                
-                // Notification options
-                _buildNotificationOption('Get notified about sales', false),
-                _buildNotificationOption('Case', false),
-                _buildNotificationOption('CPU', false),
-                _buildNotificationOption('Motherboard', false),
-                _buildNotificationOption('GPU', false),
-                _buildNotificationOption('RAM', false),
-                _buildNotificationOption('CPU Cooler', false),
-                _buildNotificationOption('Storage', false),
-                _buildNotificationOption('Power Supply', false),
-                _buildNotificationOption('Case Fan', false),
-                _buildNotificationOption('Monitor', false),
-                _buildNotificationOption('Mouse', false),
-                _buildNotificationOption('Keyboard', false),
-                _buildNotificationOption('Speaker', false),
-                _buildNotificationOption('Headphones', false),
-                _buildNotificationOption('Thermal Compound', false),
-                _buildNotificationOption('Operating System', false),
-                _buildNotificationOption('Sound Card', false),
-                _buildNotificationOption('Network Card', false),
-                _buildNotificationOption('Microphone', false),
-                _buildNotificationOption('VR Headset', false),
-                _buildNotificationOption('Capture Card', false),
-                _buildNotificationOption('Webcam', false),
-                _buildNotificationOption('Accessory', false),
-                _buildNotificationOption('Other', false),
-                
-                SizedBox(height: 24),
-                
-                Divider(),
-                
-                SizedBox(height: 24),
-                
-                // View Results button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: Text('View Results (All)'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildNotificationOption(String title, bool isChecked) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title),
-          Switch(value: isChecked, onChanged: (value) {}),
-        ],
+              ),
       ),
     );
   }
