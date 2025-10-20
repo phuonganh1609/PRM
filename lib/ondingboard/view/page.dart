@@ -5,6 +5,7 @@ import 'package:buid_app/ondingboard/theme/theme.dart' as theme;
 import 'package:buid_app/ondingboard/component/sale_list_screen.dart';
 import 'package:buid_app/ondingboard/component/signin_method_screen.dart';
 import 'package:buid_app/ondingboard/component/profile_screen.dart';
+import 'package:buid_app/ondingboard/component/login_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,17 +16,17 @@ class HomePage extends StatefulWidget {
 
 class _HomeScreenState extends State<HomePage> {
   int _currentIndex = 0;
+//note đánh dấu code được thêm
   bool _isLoggedIn = false;
+  Map<String, dynamic> userData = {};
 
-  // Tạo userData mẫu (sau này có thể load từ SharedPreferences)
-  Map<String, dynamic> userData = {
-    "id": 1,
-    "fullname": "Demo User",
-    "email": "demo@example.com",
-    "phone": "0123456789",
-    "address": "Ho Chi Minh City",
-    "role": "User",
-  };
+  void _onLoginSuccess(Map<String, dynamic> user) {
+    setState(() {
+      _isLoggedIn = true;
+      userData = user;
+    });
+  }
+  //kết thúc phần code được thêm
 
   @override
   Widget build(BuildContext context) {
@@ -33,9 +34,11 @@ class _HomeScreenState extends State<HomePage> {
       const SelectBuildPage(),
       Categories(),
       const SaleListScreen(), //
+      //note đánh dấu code được thêm
       _isLoggedIn
-          ? LoggedInScreen(user: userData) //  truyền đúng param
+          ? ProfileScreen(user: userData)
           : _buildProfilePlaceholder(),
+      //kết thúc phần code được thêm
     ];
 
     return Scaffold(
@@ -95,13 +98,17 @@ class _HomeScreenState extends State<HomePage> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                final result = await Navigator.push<Map<String, dynamic>>(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const SignInMethodScreen(),
-                  ), //chuyen den login, chua thay doi duong dan
+                    builder: (_) => const LoginScreen(),
+                  ),
                 );
+
+                if (result != null) {
+                  _onLoginSuccess(result);
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,

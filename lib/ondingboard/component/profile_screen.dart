@@ -3,10 +3,10 @@ import 'package:http/http.dart' as http;
 import 'package:buid_app/ondingboard/theme/theme.dart' as theme;
 import 'package:buid_app/ondingboard/component/buildPC.dart';
 
-class LoggedInScreen extends StatelessWidget {
+class ProfileScreen extends StatelessWidget {
   final Map<String, dynamic> user;
 
-  const LoggedInScreen({super.key, required this.user});
+  const ProfileScreen({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
