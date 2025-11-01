@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:buid_app/ondingboard/theme/theme.dart' as theme;
-import 'package:buid_app/ondingboard/component/buildPC.dart';
+import 'package:buid_app/Core/Theme/theme.dart' as theme;
+import 'package:buid_app/Core/Widgets/buildPC.dart';
 
 class ProfileScreen extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -98,7 +98,7 @@ class ProfileScreen extends StatelessWidget {
           } else if (text == 'Review App') {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (_) => const SelectBuildPage()),
+              MaterialPageRoute(builder: (_) => const BuildPC()),
             );
           } else if (text == 'Delete Account') {
             await _deleteAccount(context);

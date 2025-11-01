@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:buid_app/ondingboard/component/buildPC.dart';
-import 'package:buid_app/ondingboard/component/categories.dart';
-import 'package:buid_app/ondingboard/theme/theme.dart' as theme;
-import 'package:buid_app/ondingboard/component/sale_list_screen.dart';
-import 'package:buid_app/ondingboard/component/signin_method_screen.dart';
-import 'package:buid_app/ondingboard/component/profile_screen.dart';
-import 'package:buid_app/ondingboard/component/login_screen.dart';
+import 'package:buid_app/Core/Widgets/buildPC.dart';
+import 'package:buid_app/Core/Widgets/categories.dart';
+import 'package:buid_app/Core/Widgets/sale_list_screen.dart';
+import 'package:buid_app/Core/Widgets/profile_screen.dart';
+import 'package:buid_app/Core/Widgets/login_screen.dart';
+import 'package:buid_app/Core/Widgets/signin_method_screen.dart';
+import 'package:buid_app/Core/Theme/theme.dart' as theme;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,7 +16,8 @@ class HomePage extends StatefulWidget {
 
 class _HomeScreenState extends State<HomePage> {
   int _currentIndex = 0;
-//note đánh dấu code được thêm
+
+  // ✅ Thêm biến lưu trạng thái đăng nhập
   bool _isLoggedIn = false;
   Map<String, dynamic> userData = {};
 
@@ -26,19 +27,19 @@ class _HomeScreenState extends State<HomePage> {
       userData = user;
     });
   }
-  //kết thúc phần code được thêm
 
   @override
   Widget build(BuildContext context) {
+    //  Nếu chưa đăng nhập, gán userId = null
+    final int? userId = _isLoggedIn ? userData['id'] : null;
+
     final List<Widget> pages = [
-      const SelectBuildPage(),
-      Categories(),
-      const SaleListScreen(), //
-      //note đánh dấu code được thêm
-      _isLoggedIn
-          ? ProfileScreen(user: userData)
-          : _buildProfilePlaceholder(),
-      //kết thúc phần code được thêm
+      const BuildPC(),
+      const Categories(),
+      // ✅ Truyền userId vào SaleListScreen
+      SaleListScreen(userId: userId, grocery: {}),
+      //  Nếu đã đăng nhập thì hiển thị profile, ngược lại là placeholder
+      _isLoggedIn ? ProfileScreen(user: userData) : _buildProfilePlaceholder(),
     ];
 
     return Scaffold(
@@ -101,9 +102,7 @@ class _HomeScreenState extends State<HomePage> {
               onPressed: () async {
                 final result = await Navigator.push<Map<String, dynamic>>(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const LoginScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
                 );
 
                 if (result != null) {

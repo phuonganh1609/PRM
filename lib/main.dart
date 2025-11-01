@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:buid_app/ondingboard/view/page.dart';
+import 'package:provider/provider.dart';
+import 'package:buid_app/Core/View/page.dart';
+import 'package:buid_app/Core/Provider/cart_provider.dart'; // Thêm dòng này
 
 void main() {
   runApp(const MyApp());
@@ -10,6 +12,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: const HomePage());
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => CartProvider(),
+        ), // Provider cho giỏ hàng
+        // Provider cho giỏ hàng
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: const HomePage(),
+      ),
+    );
   }
 }
