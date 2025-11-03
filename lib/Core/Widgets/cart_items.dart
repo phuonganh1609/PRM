@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:buid_app/Core/Provider/cart_provider.dart';
 import 'package:buid_app/Core/Model/cart_model.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart'; // 👉 Thêm để format giá tiền
 
 class CartItems extends StatefulWidget {
   final CartModel cart;
@@ -18,6 +19,11 @@ class _CartItemsState extends State<CartItems> {
   bool isLoading = true;
   String? errorMessage;
   Map<String, dynamic>? product;
+
+  final _currencyFormatter = NumberFormat.currency(
+    locale: 'vi_VN',
+    symbol: '₫',
+  );
 
   @override
   void initState() {
@@ -40,13 +46,11 @@ class _CartItemsState extends State<CartItems> {
 
     try {
       final response = await http.get(Uri.parse(url));
-
       if (!mounted) return;
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
         setState(() {
-          product = data;
+          product = jsonDecode(response.body);
           isLoading = false;
         });
       } else {
@@ -108,7 +112,7 @@ class _CartItemsState extends State<CartItems> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Hàng đầu: ảnh + tên + giá + nút tăng giảm
+          // --- Ảnh + Thông tin sản phẩm ---
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -122,21 +126,17 @@ class _CartItemsState extends State<CartItems> {
                         width: 80,
                         height: 80,
                         fit: BoxFit.cover,
-                        errorBuilder: (ctx, err, stack) => Container(
-                          width: 80,
-                          height: 80,
-                          color: Colors.grey[200],
-                          child: const Icon(Icons.image_not_supported),
-                        ),
                       )
                     : Container(
                         width: 80,
                         height: 80,
                         color: Colors.grey[200],
-                        child: const Icon(Icons.image, size: 36),
+                        child: const Icon(Icons.image_not_supported, size: 36),
                       ),
               ),
               const SizedBox(width: 12),
+
+              // --- Tên và giá sản phẩm ---
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,7 +147,7 @@ class _CartItemsState extends State<CartItems> {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 15,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -155,45 +155,39 @@ class _CartItemsState extends State<CartItems> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          price > 0 ? "${price.toStringAsFixed(0)} đ" : "—",
+                          _currencyFormatter.format(price),
                           style: const TextStyle(
-                            fontSize: 15,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.red,
+                            color: Colors.redAccent,
                           ),
                         ),
+
+                        // --- Nút tăng giảm ---
                         Row(
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove_circle_outline),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 28,
-                                minHeight: 28,
-                              ),
-                              onPressed: () {
-                                cartProvider.reduceQuantity(
-                                  widget.cart.grocery,
-                                );
-                              },
-                            ),
-                            Text(
-                              "${widget.cart.quantity}",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                            _qtyButton(
+                              icon: Icons.remove_circle_outline,
+                              onTap: () => cartProvider.reduceQuantity(
+                                widget.cart.grocery,
                               ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.add_circle_outline),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 28,
-                                minHeight: 28,
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
                               ),
-                              onPressed: () {
-                                cartProvider.addToCart(widget.cart.grocery);
-                              },
+                              child: Text(
+                                "${widget.cart.quantity}",
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            _qtyButton(
+                              icon: Icons.add_circle_outline,
+                              onTap: () =>
+                                  cartProvider.addToCart(widget.cart.grocery),
                             ),
                           ],
                         ),
@@ -205,28 +199,39 @@ class _CartItemsState extends State<CartItems> {
             ],
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Divider(color: Colors.grey[300]),
 
-          // Hàng thứ hai: thành tiền
+          // --- Thành tiền ---
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                "Total:",
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                "Thành tiền:",
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
               Text(
-                "${subtotal.toStringAsFixed(0)} đ",
+                _currencyFormatter.format(subtotal),
                 style: const TextStyle(
-                  color: themes.AppColors.price,
-                  fontSize: 15,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
+                  color: themes.AppColors.price,
                 ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _qtyButton({required IconData icon, required VoidCallback onTap}) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Icon(icon, size: 22, color: Colors.grey[700]),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:buid_app/Core/Provider/cart_provider.dart';
+import 'package:buid_app/Core/Provider/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:buid_app/Core/Theme/theme.dart' as theme;
@@ -8,17 +9,18 @@ import 'sale_filter_screen.dart';
 import 'login_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:buid_app/Core/Widgets/cart_icon.dart';
+import 'package:intl/intl.dart'; // ✅ Sửa lại import cho đúng
 
 class SaleListScreen extends StatefulWidget {
   final int? categoryId;
-  final int? userId;
   final Map<String, dynamic> grocery;
+  final int? userId;
 
   const SaleListScreen({
     super.key,
     this.categoryId,
-    this.userId,
     required this.grocery,
+    this.userId,
   });
 
   @override
@@ -29,12 +31,16 @@ class _SaleListScreenState extends State<SaleListScreen> {
   List<dynamic> products = [];
   bool isLoading = true;
   String? errorMessage;
-  int? currentUserId;
+
+  // ✅ Hàm format giá
+  String formatPrice(num price) {
+    final formatter = NumberFormat('#,###', 'vi_VN');
+    return '${formatter.format(price)} đ';
+  }
 
   @override
   void initState() {
     super.initState();
-    currentUserId = widget.userId;
     if (widget.categoryId != null) {
       fetchProductsByCategory(widget.categoryId!);
     } else {
@@ -80,6 +86,9 @@ class _SaleListScreenState extends State<SaleListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: theme.AppColors.primaryGradient.colors.first,
@@ -93,7 +102,6 @@ class _SaleListScreenState extends State<SaleListScreen> {
           ),
         ),
         actions: [
-          // Nút lọc
           IconButton(
             icon: const Icon(Icons.filter_list),
             color: theme.AppColors.background,
@@ -111,7 +119,7 @@ class _SaleListScreenState extends State<SaleListScreen> {
               }
             },
           ),
-          // Nút giỏ hàng
+
           GestureDetector(
             onTap: () {
               Navigator.push(
@@ -126,6 +134,7 @@ class _SaleListScreenState extends State<SaleListScreen> {
           ),
         ],
       ),
+
       body: Container(
         decoration: const BoxDecoration(
           gradient: theme.AppColors.primaryGradient,
@@ -148,14 +157,14 @@ class _SaleListScreenState extends State<SaleListScreen> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 0.68, //  cân bằng chiều cao item
+                  childAspectRatio: 0.68,
                 ),
                 itemCount: products.length,
                 itemBuilder: (context, index) {
                   final p = products[index];
-                  final price = (p["productPrices"]?.isNotEmpty ?? false)
-                      ? "${p["productPrices"][0]["price"]} đ"
-                      : "—";
+                  final priceValue = (p["productPrices"]?.isNotEmpty ?? false)
+                      ? p["productPrices"][0]["price"]
+                      : 0;
 
                   return Container(
                     decoration: BoxDecoration(
@@ -174,7 +183,6 @@ class _SaleListScreenState extends State<SaleListScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // Hình ảnh
                           Flexible(
                             flex: 4,
                             child: ClipRRect(
@@ -201,7 +209,6 @@ class _SaleListScreenState extends State<SaleListScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          // Tên sản phẩm
                           Flexible(
                             flex: 2,
                             child: Text(
@@ -216,9 +223,8 @@ class _SaleListScreenState extends State<SaleListScreen> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          // Giá
                           Text(
-                            price,
+                            formatPrice(priceValue), // ✅ giá hiển thị đẹp
                             style: const TextStyle(
                               color: theme.AppColors.price,
                               fontWeight: FontWeight.bold,
@@ -227,7 +233,6 @@ class _SaleListScreenState extends State<SaleListScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const Spacer(),
-                          // Nút Order
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor:
@@ -241,8 +246,7 @@ class _SaleListScreenState extends State<SaleListScreen> {
                               ),
                             ),
                             onPressed: () async {
-                              // Nếu chưa đăng nhập → chuyển sang LoginScreen
-                              if (currentUserId == null) {
+                              if (!userProvider.isLoggedIn) {
                                 final result = await Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -250,13 +254,9 @@ class _SaleListScreenState extends State<SaleListScreen> {
                                   ),
                                 );
 
-                                // Sau khi đăng nhập quay lại, kiểm tra kết quả
                                 if (result != null &&
                                     result.containsKey('id')) {
-                                  setState(() {
-                                    currentUserId = result['id'];
-                                  });
-
+                                  userProvider.setUser(result);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text("Đăng nhập thành công!"),
@@ -264,20 +264,12 @@ class _SaleListScreenState extends State<SaleListScreen> {
                                     ),
                                   );
                                 }
-
-                                return; // Thoát khỏi hàm để không chạy tiếp phần mua hàng
+                                return;
                               }
 
-                              // Nếu đã đăng nhập → tiến hành thêm vào giỏ và checkout
-                              final cartProvider = Provider.of<CartProvider>(
-                                context,
-                                listen: false,
-                              );
-
                               cartProvider.addToCart(p);
-
                               await cartProvider.checkout(
-                                userId: currentUserId!,
+                                userId: userProvider.userId!,
                                 context: context,
                               );
                             },

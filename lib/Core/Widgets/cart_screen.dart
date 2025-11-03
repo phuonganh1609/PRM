@@ -1,8 +1,10 @@
+import 'package:buid_app/Core/Widgets/checkout.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:buid_app/Core/Provider/cart_provider.dart';
 import 'package:buid_app/Core/Widgets/cart_items.dart';
 import 'package:buid_app/Core/Theme/theme.dart' as themes;
+import 'package:intl/intl.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -17,6 +19,12 @@ class _CartScreenState extends State<CartScreen> {
     final cartProvider = Provider.of<CartProvider>(context);
     final cartItems = cartProvider.carts;
 
+    //  Giả lập userId, sau này bạn thay bằng user thực
+    final int userId = 1;
+    final _currencyFormatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: '₫',
+    );
     return Scaffold(
       backgroundColor: const Color(0xFFF6F6F6),
       appBar: AppBar(
@@ -29,7 +37,7 @@ class _CartScreenState extends State<CartScreen> {
         elevation: 0,
       ),
 
-      // Nội dung chính
+      // === Nội dung chính ===
       body: cartItems.isEmpty
           ? const Center(
               child: Text(
@@ -46,7 +54,7 @@ class _CartScreenState extends State<CartScreen> {
               },
             ),
 
-      // Thanh tổng thanh toán
+      // === Thanh tổng + nút Pay ===
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: const BoxDecoration(
@@ -72,12 +80,15 @@ class _CartScreenState extends State<CartScreen> {
                         color: themes.AppColors.textPrimary,
                       ),
                     ),
+
                     Text(
-                      "${cartProvider.totalPrice.toStringAsFixed(0)} đ",
+                      _currencyFormatter.format(
+                        cartProvider.totalPrice.toStringAsFixed(0),
+                      ),
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: themes.AppColors.price,
+                        color: Colors.redAccent,
                       ),
                     ),
                   ],
@@ -101,11 +112,14 @@ class _CartScreenState extends State<CartScreen> {
                   onPressed: cartItems.isEmpty
                       ? null
                       : () {
-                          //  Gửi API thanh toán hoặc điều hướng tới màn hình Checkout
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("PAID!"),
-                              backgroundColor: Colors.green,
+                          // 👉 Chuyển tới màn hình Checkout
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CheckOutScreen(
+                                userId: userId,
+                                cart: cartItems,
+                              ),
                             ),
                           );
                         },
