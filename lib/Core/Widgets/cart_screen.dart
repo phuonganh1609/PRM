@@ -82,9 +82,7 @@ class _CartScreenState extends State<CartScreen> {
                     ),
 
                     Text(
-                      _currencyFormatter.format(
-                        cartProvider.totalPrice.toStringAsFixed(0),
-                      ),
+                      _currencyFormatter.format(cartProvider.totalPrice),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -112,7 +110,7 @@ class _CartScreenState extends State<CartScreen> {
                   onPressed: cartItems.isEmpty
                       ? null
                       : () {
-                          // 👉 Chuyển tới màn hình Checkout
+                          //  Chuyển tới màn hình Checkout
                           Navigator.push(
                             context,
                             MaterialPageRoute(
